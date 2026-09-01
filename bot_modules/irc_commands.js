@@ -1,4 +1,5 @@
 var https = require('https');
+var fetch = require('cross-fetch');
 var math = require('mathjs');
 
 var bot = require('./irc_bot.js');

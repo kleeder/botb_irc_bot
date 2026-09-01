@@ -1,4 +1,5 @@
 var botb_api_root = 'https://battleofthebits.com/api/v1/';
+var fetch = require('cross-fetch');
 
 function normalizeRequestPath(request_url) {
 	return request_url.replace(/ /g, '+');

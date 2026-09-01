@@ -4,11 +4,12 @@
   "description": "IRC bot for Battle of the Bits",
   "main": "bot.js",
   "engines": {
-    "node": ">=24"
+    "node": ">=16"
   },
   "dependencies": {
+    "cross-fetch": "^4.1.0",
     "irc": "^0.5.0",
-    "mathjs": "^15.2.0"
+    "mathjs": "^11.12.0"
   },
   "scripts": {
     "start": "node bot.js"
