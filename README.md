@@ -16,9 +16,3 @@ Last tested to work on Node.js v24.x.
 
 # Configuration
 Copy bot_modules/config_example.js to bot_modules/config.js and edit as you deem necessary.
-
-# Contributing
-ES6 with semicolons please ;)
-
-`npm run lint` before you commit
-`npm run lint:fix` will attempt autofixings
