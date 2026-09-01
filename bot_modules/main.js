@@ -16,7 +16,7 @@ module.exports = {
 	initialize: () => {
 		// check that bot_modules/config.js is setup
 		try {
-			fs.lstatSync('bot_modules/config.js', fs.F_OK);
+			fs.accessSync('bot_modules/config.js', fs.constants.F_OK);
 			console.log('config.js found');
 			// XXX also need to check all parameters are defined
 			// in the case of config structure updates

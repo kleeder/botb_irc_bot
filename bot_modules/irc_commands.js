@@ -1,5 +1,4 @@
 var https = require('https');
-var querystring = require('querystring');
 var math = require('mathjs');
 
 var bot = require('./irc_bot.js');
@@ -7,7 +6,6 @@ var botb_api = require('./botb_api.js');
 var config = require('./config.js');
 var kudos = require('./irc_kudos.js');
 var memory = require('./memory.js');
-var request = require('request');
 var ultrachord = require('./irc_ultrachord.js');
 var util = require('./util.js');
 
@@ -664,7 +662,12 @@ module.exports = {
 	 */
 	update_ip: (info, word) => {
 		// get public facing ip from free service
-		request('http://ipinfo.io/ip', (error, response, body) => {
+		fetch('https://ipinfo.io/ip').then(response => {
+			if (!response.ok) {
+				throw new Error(`IP lookup failed with status ${response.status}`);
+			}
+			return response.text();
+		}).then(body => {
 			let host_domain = `${body.trim()}:${config.http.port}`;
 			memory.set('host_domain', host_domain);
 			console.log(`host domain ${host_domain} saved to memory`);
@@ -678,6 +681,9 @@ module.exports = {
 				console.log(response);
 				bot.say(info.channel, response);
 			});
+		}).catch(error => {
+			console.log(error);
+			bot.say(info.channel, 'unable to determine public IP');
 		});
 	},
 
@@ -707,7 +713,7 @@ module.exports = {
 		// matching a search query, using jangler's API key
 		let req_url = 'https://www.googleapis.com/youtube/v3/search?key=' +
 			'AIzaSyDR5xOXOViVLMUyWWJM1iQefTaRiKkJfqs&part=id&maxResults=1&q=' +
-			querystring.escape(words.slice(1).join(' ')) + '&type=video';
+			encodeURIComponent(words.slice(1).join(' ')) + '&type=video';
 		https.request(req_url, resp => {
 			resp.on('data', data => {
 				// parse API response and give video URL (if video exists)

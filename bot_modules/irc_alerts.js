@@ -7,10 +7,6 @@
  * - when an XHB ends, and voting begins
  */
 
-var https = require('https');
-var querystring = require('querystring');
-var request = require('request');
-
 var bot = require('./irc_bot.js');
 var commands = require('./irc_commands.js');
 var botb_api = require('./botb_api.js');

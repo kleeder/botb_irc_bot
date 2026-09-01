@@ -1,9 +1,20 @@
+var util = require('util');
+if (typeof util.log !== 'function') {
+	util.log = function() {
+		const now = new Date().toISOString();
+		console.log.apply(console, [now].concat(Array.from(arguments)));
+	};
+}
+
 var irc = require('irc');
 var config = require('./config.js');
 var botb_api = require('./botb_api.js');
 
 var bot;
 var commands;
+var default_retry_count = 9999;
+var default_retry_delay = 10000;
+var default_retry_delay_max = 300000;
 
 var channel_blocks = {
 	private_chat: {
@@ -57,21 +68,21 @@ var commands_alias_filters = {
 };
 
 
-alias_check = command => {
+var alias_check = command => {
 	if (typeof commands_aliases[command] !== 'undefined')
 		command = commands_aliases[command];
 	return command;
 };
 
-alias_filter_check = text => {
+var alias_filter_check = text => {
 	for (let key in commands_alias_filters) {
-		filter = commands_alias_filters[key];
+		let filter = commands_alias_filters[key];
 		if (filter.test(text)) return key;
 	}
 	return false;
 };
 
-command_check = (channel_type, command) => {
+var command_check = (channel_type, command) => {
 	if (channel_blocks[channel_type][command] === false)
 		return false;
 	if (typeof commands[command] === 'undefined')
@@ -79,7 +90,7 @@ command_check = (channel_type, command) => {
 	return true;
 };
 
-command_parser = (from, to, text, info) => {
+var command_parser = (from, to, text, info) => {
 	let command = '';
 	// break text into words
 	let words = text.split(' ').filter(e => e !== '');
@@ -193,7 +204,10 @@ module.exports = {
 			realName: config.bot_name + ' IRC bot',
 			debug: config.irc.debug,
 			autoRejoin: config.irc.autoRejoin,
-			channels: config.irc.channels
+			channels: config.irc.channels,
+			retryCount: typeof config.irc.retryCount === 'number' ? config.irc.retryCount : default_retry_count,
+			retryDelay: typeof config.irc.retryDelay === 'number' ? config.irc.retryDelay : default_retry_delay,
+			retryDelayMax: typeof config.irc.retryDelayMax === 'number' ? config.irc.retryDelayMax : default_retry_delay_max
 		});
 
 		//commands.init(this)
@@ -202,6 +216,17 @@ module.exports = {
 		bot.addListener('error', message => {
 			console.log(`IRC error:`);
 			console.log(message);
+		});
+		bot.addListener('abort', function() {
+			console.log('IRC connection aborted');
+		});
+		bot.addListener('netError', function(exception) {
+			console.log('IRC network error:');
+			console.log(exception);
+		});
+		bot.addListener('registered', message => {
+			let nick = message && Array.isArray(message.args) ? message.args[0] : config.bot_name;
+			console.log(`IRC connected as ${nick}`);
 		});
 		bot.addListener('join', (channel, who) => {
 			console.log(`${who} has joined ${channel}`);
@@ -222,7 +247,10 @@ module.exports = {
 			var message = text;
 			if (from !== 'botbd') message = '<' + from + '> ' + message;
 			if (!config.irc.debug) {
-				botb_api.post('battle/log_from_bot', 'message=' + encodeURIComponent(message));
+				botb_api.post('battle/log_from_bot', 'message=' + encodeURIComponent(message)).catch(error => {
+					console.log('failed to post message to API');
+					console.log(error);
+				});
 			}
 		});
 	},

@@ -1,5 +1,4 @@
 var config = require('./config.js');
-var ram = require('./memory.js');
 var http = require('http');
 var bot = require('./irc_bot.js');
 var alerts = require('./irc_alerts.js');
@@ -22,17 +21,17 @@ var post_handler = (request, response) => {
 			console.log(data);
 			post_data += data;
 			if (post_data.length > 1000000) {
-				post_data = '';
-				respond(response, 413, 'text/plain', 'TOO MUCH DATA!  D:').end();
-				request.connection.destroy();
+				respond(response, 413, 'text/plain', 'TOO MUCH DATA!  D:');
+				request.destroy();
+				reject(new Error('request payload exceeded 1MB'));
+				return;
 			}
 		});
 		request.on('end', () => {
-			respond(response, 200, 'text/plain', 'thanxiez for teh datas!');
 			resolve(post_data);
-//			if (typeof post_data === 'string') return resolve(post_data);
-			if (typeof post_data !== 'object') return resolve(false);
-			else resolve(post_data);
+		});
+		request.on('error', error => {
+			reject(error);
 		});
 	});
 };
@@ -57,28 +56,42 @@ module.exports = {
 			if (request.method == 'POST') {
 				let p = post_handler(request, response);
 				p.then(data => {
-					if (typeof data !== 'object') data = JSON.parse(data);
+					let parsedData;
+					try {
+						parsedData = JSON.parse(data);
+					}
+					catch (error) {
+						respond(response, 400, 'text/plain', 'invalid json payload');
+						return;
+					}
 					let rtype = 200;
 					let rtext = '';
 					// check for valid key
-					if (data.key != config.http.key) {
+					if (parsedData.key != config.http.key) {
 						console.log('BAD KEY');
-						rtype = 500;
+						rtype = 403;
 						rtext = 'invalid access key';
 					}
-					// check for and run command
-					// XXX could add error handling to response
-					if (typeof commands[data.command] === 'function') {
-						console.log('run command: ' + data.command);
-						rtext = commands[data.command](data.message);
+					else if (typeof commands[parsedData.command] === 'function') {
+						console.log('run command: ' + parsedData.command);
+						rtext = commands[parsedData.command](parsedData.message);
+					}
+					else {
+						rtype = 400;
+						rtext = 'unknown command';
 					}
 					respond(response, rtype, 'text/plain', rtext);
 					return;
+				}).catch(error => {
+					if (!response.writableEnded) {
+						respond(response, 500, 'text/plain', 'request handling error');
+					}
+					console.log(error);
 				});
 			} else {
 				respond(response, 500, 'text/plain', 'must post data');
 			}
-		}).listen(config.http.port, config.http.ip, null, () => {
+		}).listen(config.http.port, config.http.ip, () => {
 			console.log(`Server running at ${config.http.ip}:${config.http.port}`);
 		});
 	}

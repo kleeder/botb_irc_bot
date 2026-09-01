@@ -1,12 +1,13 @@
-FROM nodesource/jessie:6.3.1
+FROM node:24-bookworm-slim
 
-RUN apt-get update && apt-get install -y lame sox curl
+RUN apt-get update && apt-get install -y --no-install-recommends lame sox curl && rm -rf /var/lib/apt/lists/*
 
-ADD package.json package.json  
-RUN npm install  
-RUN npm install supervisor -g
-ADD bot.js .
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+COPY . .
 
 EXPOSE 3000
 
-CMD ["supervisor","bot.js"]
+CMD ["node", "bot.js"]

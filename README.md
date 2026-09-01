@@ -2,7 +2,7 @@
 All that instant relay chat magic.
 
 # Getting Started
-Runs on node version 6+ (due to heavy es6 usage) and Linux/Mac (or Windows w/ Cygwin due to execSync usage). For dev you'll need to change the bot's IRC nick.
+Runs on node v24+.
 
 To install the prerequisites:
 
@@ -12,7 +12,7 @@ You also need the LAME, SoX, and curl packages. On Ubuntu/Debian, you can use th
 
 ``apt-get install lame sox curl``
 
-Last tested to work on node v12.x!
+Last tested to work on Node.js v24.x.
 
 # Configuration
 Copy bot_modules/config_example.js to bot_modules/config.js and edit as you deem necessary.
