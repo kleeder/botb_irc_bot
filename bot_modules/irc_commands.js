@@ -44,7 +44,7 @@ module.exports = {
 	url_regex: url_regex,
 	get_xhb_type: get_xhb_type,
 	/**
-	 * blocked
+	 * agenda; returns link to battle agenda (xhbs)
 	 *
 	 */
 	agenda: (info, words) => {
